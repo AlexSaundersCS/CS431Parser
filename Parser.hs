@@ -20,7 +20,6 @@ main = do
 exp :: [(Token)] -> [(Token)]
 exp = undefined
 
-
 exp' :: [(Token)] -> [(Token)]
 exp' = undefined
 
@@ -34,7 +33,7 @@ factor :: [(Token)] -> [(Token)]
 factor = undefined
 
 consume :: [(Token)] -> [(Token)]
-consume = undefined
+consume tlst = tlst tail
 
 parse :: [(Token)] -> Bool
 parse = undefined
