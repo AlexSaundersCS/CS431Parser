@@ -7,6 +7,9 @@ main = do
  putStrLn $ testOutput parse "parse" test_addition expected_true
  putStrLn $ testOutput parse "parse" test_par_addition expected_true
  putStrLn $ testOutput parse "parse" test_bad_addition expected_false
+ putStrLn $ testOutput parse "parse" test_subtraction expected_true
+ putStrLn $ testOutput parse "parse" test_par_subtraction expected_true
+ putStrLn $ testOutput parse "parse" test_bad_subtraction expected_false
  putStrLn $ testOutput parse "parse" test_missing_rightpar expected_false
  putStrLn $ testOutput parse "parse" test_multiplication expected_true
  putStrLn $ testOutput parse "parse" test_bad_multiplication expected_false
@@ -17,6 +20,9 @@ main = do
    test_addition = [Value, Add, Value]
    test_par_addition = [LeftPar, Value, Add, Value, RightPar]
    test_bad_addition = [LeftPar, Value, Add, RightPar]
+   test_subtraction = [Value, Subtract, Value]
+   test_par_subtraction = [LeftPar, Value, Subtract, Value, RightPar]
+   test_bad_subtraction = [LeftPar, Value, Subtract, RightPar]
    test_missing_rightpar = [Value, Add, Value, RightPar]
    test_multiplication = [Value, Multiply, Value]
    test_bad_multiplication = [Multiply, Value, Value]
@@ -65,7 +71,7 @@ factor (l:ls)
 
 --Consume Function
 consume :: [Token] -> Token -> [Token]
-consume [] RightPar = []
+consume [] _ = []
 consume (l:ls) etv
  | etv == l = ls
  | otherwise = (l:ls)
@@ -86,7 +92,7 @@ data Token = Id | Value
 
 --test function
 testOutput :: (Show a, Eq a, Show b, Eq b) => (a -> b) -> String -> a ->  b -> String
-testOutput f name input expected = concat [ name, " ",  show input, " should be ", show expected, " -->" ,
+testOutput f name input expected = concat [ name, " ",  show input, " should be ", show expected, " --> " ,
                                                                                                                 let result = f input in
                                                                                                                  if result == expected
                                                                                                                  then "PASS"
