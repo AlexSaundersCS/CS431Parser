@@ -17,16 +17,16 @@ main = do
  where
    test_empty = []
    test_single = [Id]
-   test_addition = [Value, Add, Value]
-   test_par_addition = [LeftPar, Value, Add, Value, RightPar]
-   test_bad_addition = [LeftPar, Value, Add, RightPar]
-   test_subtraction = [Value, Subtract, Value]
-   test_par_subtraction = [LeftPar, Value, Subtract, Value, RightPar]
-   test_bad_subtraction = [LeftPar, Value, Subtract, RightPar]
-   test_missing_rightpar = [Value, Add, Value, RightPar]
-   test_multiplication = [Value, Multiply, Value]
-   test_bad_multiplication = [Multiply, Value, Value]
-   test_math = [LeftPar, Value, Add, Value, RightPar, Multiply, Value]
+   test_addition = [Value 2, Add, Value 2]
+   test_par_addition = [LeftPar, Value 5, Add, Value 3, RightPar]
+   test_bad_addition = [LeftPar, Value 4, Add, RightPar]
+   test_subtraction = [Value 3, Subtract, Value 7]
+   test_par_subtraction = [LeftPar, Value 0, Subtract, Value 2, RightPar]
+   test_bad_subtraction = [LeftPar, Value 3, Subtract, RightPar]
+   test_missing_rightpar = [Value 1, Add, Value 4, RightPar]
+   test_multiplication = [Value 1, Multiply, Value 10]
+   test_bad_multiplication = [Multiply, Value 4, Value 3]
+   test_math = [LeftPar, Value 1, Add, Value 2, RightPar, Multiply, Value 3]
    expected_true = True
    expected_false = False
    
@@ -42,11 +42,12 @@ exp' (l:ls)
  | l == Add = exp' (term(consume(l:ls) Add))
  | l == Subtract = exp' (term(consume(l:ls) Subtract))
  | (l:ls) == [] = (l:ls)
- | otherwise = (l:ls)
+ | otherwise = [Undefined]
 
 
 --term and term tail
 term :: [Token] -> [Token]
+term [] = []
 term (l:ls) = term' (factor (l:ls))
 
 term' :: [Token] -> [Token]
@@ -55,18 +56,20 @@ term' (l:ls)
  | l == Multiply = term' (factor(consume(l:ls) Multiply))
  | l == Divide = term' (factor(consume(l:ls) Divide))
  | (l:ls) == [] = (l:ls)
- | otherwise = (l:ls)
+ | otherwise = [Undefined]
 
 
 --Factor function
 factor :: [Token] -> [Token]
-factor [] = []
+factor [] = [Undefined]
 factor (l:ls)
- | l == Id = consume (l:ls) Id
- | l == Value = consume (l:ls) Value
- | l == LeftPar = expression (consume(l:ls) LeftPar)
- | l == RightPar = consume (l:ls) RightPar
- | otherwise = (l:ls)
+ | l == Id = ls
+ | isValue l = ls
+ | l == LeftPar = consume (expression ls) RightPar
+ | otherwise = [Undefined]
+ where
+    isValue (Value _) = True
+    isValue _ = False
 
 
 --Consume Function
@@ -74,7 +77,7 @@ consume :: [Token] -> Token -> [Token]
 consume [] _ = []
 consume (l:ls) etv
  | etv == l = ls
- | otherwise = (l:ls)
+ | otherwise = [Undefined]
 
 
 --Parse function
@@ -84,7 +87,7 @@ parse (l:ls) = if expression(l:ls) == [] then True else False
 
 
 --Token data type
-data Token = Id | Value
+data Token = Id | Value Integer
     | Add | Subtract | Multiply | Divide 
     | LeftPar | RightPar | Undefined
     deriving (Show, Eq)

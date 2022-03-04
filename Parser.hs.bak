@@ -1,40 +1,102 @@
 module Main where
-
 main :: IO()
+
 main = do
- putStrLn $ testOutput parse "parse" test_input_1 expected_value_1
- putStrLn $ testOutput parse "parse" test_input_2 expected_value_2
- putStrLn $ testOutput parse "parse" test_input_3 expected_value_3
- putStrLn $ testOutput parse "parse" test_input_4 expected_value_4
- putStrLn $ testOutput parse "parse" test_input_5 expected_value_5
- where test_input_1 = "(5 +3 ) * 9 - 4"
-       test_input_2 = " 5 / ( x * x - 4 * 5) + 3"
-       test_input_3 = "(((5 + x) * 3)) - 2) / 7"
-       test_input_4 = "(5 +* x x ) + 3 / 7"
-       expected_value_1 = True
-       expected_value_2 = True
-       expected_value_3 = True
-       expected_value_4 = False
+ putStrLn $ testOutput parse "parse" test_empty expected_true
+ putStrLn $ testOutput parse "parse" test_single expected_true
+ putStrLn $ testOutput parse "parse" test_addition expected_true
+ putStrLn $ testOutput parse "parse" test_par_addition expected_true
+ putStrLn $ testOutput parse "parse" test_bad_addition expected_false
+ putStrLn $ testOutput parse "parse" test_subtraction expected_true
+ putStrLn $ testOutput parse "parse" test_par_subtraction expected_true
+ putStrLn $ testOutput parse "parse" test_bad_subtraction expected_false
+ putStrLn $ testOutput parse "parse" test_missing_rightpar expected_false
+ putStrLn $ testOutput parse "parse" test_multiplication expected_true
+ putStrLn $ testOutput parse "parse" test_bad_multiplication expected_false
+ putStrLn $ testOutput parse "parse" test_math expected_true
+ where
+   test_empty = []
+   test_single = [Id]
+   test_addition = [Value 2, Add, Value 2]
+   test_par_addition = [LeftPar, Value 5, Add, Value 3, RightPar]
+   test_bad_addition = [LeftPar, Value 4, Add, RightPar]
+   test_subtraction = [Value 3, Subtract, Value 7]
+   test_par_subtraction = [LeftPar, Value 0, Subtract, Value 2, RightPar]
+   test_bad_subtraction = [LeftPar, Value 3, Subtract, RightPar]
+   test_missing_rightpar = [Value 1, Add, Value 4, RightPar]
+   test_multiplication = [Value 1, Multiply, Value 10]
+   test_bad_multiplication = [Multiply, Value 4, Value 3]
+   test_math = [LeftPar, Value 1, Add, Value 2, RightPar, Multiply, Value 3]
+   expected_true = True
+   expected_false = False
+   
+
+--expression and expression tail
+expression :: [Token] -> [Token]
+expression [] = []
+expression (l:ls) = exp' (term (l:ls))
+
+exp' :: [Token] -> [Token]
+exp' [] = []
+exp' (l:ls)
+ | l == Add = exp' (term(consume(l:ls) Add))
+ | l == Subtract = exp' (term(consume(l:ls) Subtract))
+ | (l:ls) == [] = (l:ls)
+ | otherwise = [Undefined]
 
 
-exp :: [(Token)] -> [(Token)]
-exp = undefined
+--term and term tail
+term :: [Token] -> [Token]
+term [] = []
+term (l:ls) = term' (factor (l:ls))
+
+term' :: [Token] -> [Token]
+term' [] = []
+term' (l:ls)
+ | l == Multiply = term' (factor(consume(l:ls) Multiply))
+ | l == Divide = term' (factor(consume(l:ls) Divide))
+ | (l:ls) == [] = (l:ls)
+ | otherwise = [Undefined]
 
 
-exp' :: [(Token)] -> [(Token)]
-exp' = undefined
+--Factor function
+factor :: [Token] -> [Token]
+factor [] = [Undefined]
+factor (l:ls)
+ | l == Id = ls
+ | isValue l = ls
+ | l == LeftPar = consume (expression ls) RightPar
+ | otherwise = [Undefined]
+ where
+    isValue (Value _) = True
+    isValue _ = False
 
-term :: [(Token)] -> [(Token)]
-term = undefined
 
-term' :: [(Token)] -> [(Token)]
-term' = undefined
+--Consume Function
+consume :: [Token] -> Token -> [Token]
+consume [] _ = []
+consume (l:ls) etv
+ | etv == l = ls
+ | otherwise = error "Syntax error"
 
-factor :: [(Token)] -> [(Token)]
-factor = undefined
 
-consume :: [(Token)] -> [(Token)]
-consume = undefined
+--Parse function
+parse :: [Token] -> Bool
+parse [] = True
+parse (l:ls) = if expression(l:ls) == [] then True else False
 
-parse :: [(Token)] -> Bool
-parse = undefined
+
+--Token data type
+data Token = Id | Value Integer
+    | Add | Subtract | Multiply | Divide 
+    | LeftPar | RightPar | Undefined
+    deriving (Show, Eq)
+
+
+--test function
+testOutput :: (Show a, Eq a, Show b, Eq b) => (a -> b) -> String -> a ->  b -> String
+testOutput f name input expected = concat [ name, " ",  show input, " should be ", show expected, " --> " ,
+                                                                                                                let result = f input in
+                                                                                                                 if result == expected
+                                                                                                                 then "PASS"
+                                                                                                                 else concat["FAIL (actual: ", show result, ")"]]
